@@ -4,7 +4,7 @@ Run-time validation of tensors for machine-learning systems.
 
 ```python
 import numpy as np
-from tensorcheck import *
+from tensorcheck import tensorcheck
 
 @tensorcheck({
     "img":  {
