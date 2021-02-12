@@ -1,5 +1,5 @@
 import numpy as np
-from tensorcheck import *
+from tensorcheck import tensorcheck
 
 @tensorcheck({
     "img":  {
@@ -19,10 +19,6 @@ def inference(img, mask):
     # ...do compute
     return
 
-x = np.random.uniform(0, 255, size=[1, 3, 10, 8]).astype(np.uint8)
-y = np.random.uniform(0,   1, size=[1, 1, 10, 8])
-inference(x, y)
-# > Success
 
 x = np.random.uniform(0, 255, size=[1, 3, 10, 8]).astype(np.uint8)
 y = np.random.uniform(0,   1, size=[1, 1, 10, 7])
@@ -38,3 +34,8 @@ x = np.random.uniform(0, 255, size=[1, 3, 10, 8])
 y = np.random.uniform(0,   1, size=[1, 1, 10, 8])
 inference(x, y)
 # > tensorcheck.DataTypeException: /img/ dtype float64 is not <class 'numpy.uint8'>
+
+x = np.random.uniform(0, 255, size=[1, 3, 10, 8]).astype(np.uint8)
+y = np.random.uniform(0,   1, size=[1, 1, 10, 8])
+inference(x, y)
+# > Success
