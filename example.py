@@ -1,8 +1,3 @@
-# TensorCheck
-
-Run-time validation of tensors for machine-learning systems.
-
-```python
 import numpy as np
 from tensorcheck import *
 
@@ -43,13 +38,3 @@ x = np.random.uniform(0, 255, size=[1, 3, 10, 8])
 y = np.random.uniform(0,   1, size=[1, 1, 10, 8])
 inference(x, y)
 # > tensorcheck.DataTypeException: /img/ dtype float64 is not <class 'numpy.uint8'>
-```
-
-Supports:
-1. `np.ndarray` dtypes
-2. Shape validation, including generic shape variables
-3. Range of input variables
-
-To do:
-- [ ] Support for `torch.Tensor`
-- [ ] Return value checking
