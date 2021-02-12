@@ -3,6 +3,8 @@
 Run-time validation of tensors for machine-learning systems.
 
 ```python
+from tensorcheck import tensorcheck
+
 @tensorcheck({
     "img":  {
         "type": np.ndarray, 
@@ -31,6 +33,6 @@ Supports:
 2. Shape validation, including generic shape variables
 3. Range of input variables
 
-To Do:
+To do:
 - [ ] Support for `torch.Tensor`
 - [ ] Return value checking
