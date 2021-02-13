@@ -2,7 +2,13 @@
 
 Run-time validation of tensors for machine-learning systems.
 
-Supports:
+This is a naive way of validating tensor inputs to functions by using a
+function decorator as a hook for introspection. This is not designed to be a
+composable type system, but to simply allow for concise description of what
+tensors are expected to be when designing new architectures or writing
+visualization code.
+
+### Supports:
 1. Tensor dtypes validation for `np.ndarray` and `torch.Tensor`
 2. Shape validation, including generic shape variables
 3. Range of input validation
