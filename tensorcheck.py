@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from inspect import getcallargs
 from functools import wraps
@@ -19,19 +20,18 @@ def assert_types(types, named_args):
             raise AnnotationException(f'{name} is not a parameter of the function')
         arg = named_args[name]
 
+        if type(arg) not in [np.ndarray, torch.Tensor]:
+            raise TypeException(f'Annotation must be np.ndarray or torch.Tensor, not {type(arg)}')
+
         for check, wish in annotation.items():
 
-            if check == "type":
-                if wish not in [np.ndarray]:
-                    raise TypeException(f'Annotation must be np.ndarray or torch.Tensor, not {wish}')
-
-                if not isinstance(arg, wish):
-                    raise TypeException(f'{type(arg)} /{name}/ is not a {wish}')
-
-            elif check == "dtype":
+            if check == "dtype":
                 # Reference: stackoverflow.com/questions/12569452/how-to-identify-numpy-types-in-python
-                if not isinstance(arg.flat[0], wish):
+                if isinstance(arg, np.ndarray) and not isinstance(arg.flat[0], wish):
                     raise DataTypeException(f'/{name}/ dtype {arg.flat[0].dtype} is not {wish}')
+
+                elif isinstance(arg, torch.Tensor) and not arg.dtype == wish:
+                    raise DataTypeException(f'/{name}/ dtype {arg.dtype} is not {wish}')
 
             elif check == "shape":
                 concrete_wish = []
@@ -45,7 +45,7 @@ def assert_types(types, named_args):
 
                 for wish_dim, wish_size in enumerate(concrete_wish):
                     if arg.shape[wish_dim] != wish_size:
-                        errs = f'/{name}/ shape {arg.shape} at dim {wish_dim} != {wish[wish_dim]}={concrete_wish[wish_dim]}'
+                        errs = f'/{name}/ dim {wish_dim} of {arg.shape} is not {wish[wish_dim]}={concrete_wish[wish_dim]}'
                         raise ShapeException(errs)
 
             elif check == "range":

@@ -8,8 +8,8 @@ class TestTensorChecker(unittest.TestCase):
     def test_supports_args_and_kwargs(self):
         try:
             @tensorcheck({
-                "a": {"type": np.ndarray},
-                "b": {"type": np.ndarray},
+                "a": {},
+                "b": {},
             })
             def inference(a, b):
                 return
@@ -25,7 +25,7 @@ class TestTensorChecker(unittest.TestCase):
     def test_annotated_key_must_be_parameter(self):
         with self.assertRaises(AnnotationException):
             @tensorcheck({
-                "b": {"type": np.ndarray},
+                "b": {},
             })
             def inference(a):
                 return
@@ -38,51 +38,67 @@ class TestTensorChecker(unittest.TestCase):
     def test_dtype_success(self):
         try:
             @tensorcheck({
-                "a": {"type": np.ndarray, "dtype": np.float},
-                "b": {"type": np.ndarray, "dtype": np.uint8}
+                "a": { "dtype": np.float, "dtype": np.float64 },
+                "b": { "dtype": np.uint8    },
+                "c": { "dtype": torch.float },
             })
-            def inference(a, b):
+            def inference(a, b, c):
                 return
 
             x = np.random.randn(1, 1, 3, 2)
             img = np.random.uniform(0, 255, size=[1, 3, 5, 5]).astype(np.uint8)
-            inference(x, img)
+            t = torch.randn(1, 1, 3, 3)
+
+            inference(x, img, t)
 
         except DataTypeException:
             self.fail()
 
 
-    def test_dtype_fail(self):
+    def test_dtype_fail_numpy(self):
         with self.assertRaises(DataTypeException):
             @tensorcheck({
-                "a": {"type": np.ndarray, "dtype": np.int8}
+                "a": { "dtype": np.int8 }
             })
             def inference(a):
                 return
 
             x = np.random.randn(1, 1, 3, 2)
+            inference(x)
+
+    def test_dtype_fail_torch(self):
+        with self.assertRaises(DataTypeException):
+            @tensorcheck({
+                "a": { "dtype": torch.int }
+            })
+            def inference(a):
+                return
+
+            x = torch.randn(1, 1, 3, 2)
             inference(x)
 
 
     def test_shape_success(self):
         try:
             @tensorcheck({
-                "a": {"type": np.ndarray, "shape": [1, 1, 3, 2]},
+                "a": { "shape": [1, 1, 3, 2] },
+                "b": { "shape": [1, 1, 3, 2] },
             })
-            def inference(a):
+            def inference(a, b):
                 return
 
             x = np.random.randn(1, 1, 3, 2)
-            inference(x)
+            t = torch.randn(1, 1, 3, 2)
+            inference(x, t)
 
         except ShapeException:
             self.fail()
 
 
-    def test_shape_fail(self):
+    def test_shape_fail_numpy(self):
         with self.assertRaises(ShapeException):
             @tensorcheck({
-                "a": {"type": np.ndarray, "shape": [1, 1, 2, 2]},
+                "a": { "shape": [1, 1, 2, 2] },
             })
             def inference(a):
                 return
@@ -90,12 +106,23 @@ class TestTensorChecker(unittest.TestCase):
             x = np.random.randn(1, 1, 3, 2)
             inference(x)
 
-
-    def test_generic_shape_success(self):
+    def test_shape_fail_torch(self):
         with self.assertRaises(ShapeException):
             @tensorcheck({
-                "a": {"type": np.ndarray, "dtype": np.float64, "shape": [1, 1, 2, "W"], "range": [-5, 5] },
-                "b": {"type": np.ndarray, "dtype": np.float64, "shape": [1, 1, 3, "W"], "range": [-5, 5] },
+                "a": { "shape": [1, 1, 2, 2] },
+            })
+            def inference(a):
+                return
+
+            x = torch.randn(1, 1, 3, 2)
+            inference(x)
+
+
+    def test_generic_shape_success(self):
+        try:
+            @tensorcheck({
+                "a": { "shape": [1, 1, 3, "W"] },
+                "b": { "shape": [1, 1, 2, "W"] },
             })
             def inference(a, b):
                 return
@@ -103,13 +130,33 @@ class TestTensorChecker(unittest.TestCase):
             x = np.random.randn(1, 1, 3, 2)
             y = np.random.randn(1, 1, 2, 2)
             inference(x, y)
+
+        except:
+            self.fail()
+
+
+    def test_generic_shape_success_across_torch_and_numpy(self):
+        try:
+            @tensorcheck({
+                "a": { "dtype": np.float,    "shape": [1, 1, 2, "W"] },
+                "b": { "shape": torch.float, "shape": [1, 1, 3, "W"] },
+            })
+            def inference(a, b):
+                return
+
+            x = np.random.randn(1, 1, 2, 2)
+            y = torch.randn(1, 1, 3, 2)
+            inference(x, y)
+
+        except:
+            self.fail()
 
 
     def test_generic_shape_fail(self):
         with self.assertRaises(ShapeException):
             @tensorcheck({
-                "a": {"type": np.ndarray, "dtype": np.float64, "shape": [1, 1, "H", 2], "range": [-5, 5] },
-                "b": {"type": np.ndarray, "dtype": np.float64, "shape": [1, 1, "H", 2], "range": [-5, 5] },
+                "a": { "shape": [1, 1, "H", 2] },
+                "b": { "shape": [1, 1, "H", 2] },
             })
             def inference(a, b):
                 return
@@ -119,11 +166,76 @@ class TestTensorChecker(unittest.TestCase):
             inference(x, y)
 
 
+    def test_range_success(self):
+        try:
+            @tensorcheck({
+                "a": { "dtype": np.float,    "range": [0, 1] },
+                "b": { "dtype": torch.float, "range": [-10, 10] },
+            })
+            def inference(a, b):
+                return
+
+            x = np.random.uniform(size=[1, 1, 2, 2])
+            y = torch.randn(1, 1, 3, 2)
+            inference(x, y)
+
+        except:
+            self.fail()
+
+
+    def test_upperbound_fail_numpy(self):
+        with self.assertRaises(UpperBoundException):
+            @tensorcheck({
+                "a": { "dtype": np.float, "range": [0, 1] },
+            })
+            def inference(a):
+                return
+
+            x = 2 * np.ones([1, 1, 2, 2])
+            inference(x)
+
+
+    def test_lowerbound_fail_numpy(self):
+        with self.assertRaises(LowerBoundException):
+            @tensorcheck({
+                "a": { "dtype": np.float, "range": [0, 1] },
+            })
+            def inference(a):
+                return
+
+            x = -1 * np.ones([1, 1, 2, 2])
+            inference(x)
+
+
+    def test_upperbound_fail_torch(self):
+        with self.assertRaises(UpperBoundException):
+            @tensorcheck({
+                "a": { "dtype": torch.float, "range": [0, 1] },
+            })
+            def inference(a):
+                return
+
+            x = 2 * torch.ones(1, 1, 2, 2)
+            inference(x)
+
+
+    def test_lowerbound_fail_torch(self):
+        with self.assertRaises(LowerBoundException):
+            @tensorcheck({
+                "a": { "dtype": torch.float, "range": [0, 1] },
+            })
+            def inference(a):
+                return
+
+            x = -1 * torch.ones(1, 1, 2, 2)
+            inference(x)
+
+
     def test_rgb_image_and_alpha_mask(self):
         try:
             @tensorcheck({
-                "img":  {"type": np.ndarray, "dtype": np.uint8, "shape": [1, 3, "H", "W"], "range": [0, 255] },
-                "mask": {"type": np.ndarray, "dtype": np.float, "shape": [1, 1, "H", "W"], "range": [0, 1] },
+                "img":  { "dtype": np.uint8, "shape": [1, 3, "H", "W"], "range": [0, 255] },
+                "mask": { "dtype": np.float, "shape": [1, 1, "H", "W"], "range": [0, 1] },
             })
             def inference(img, mask):
                 return
