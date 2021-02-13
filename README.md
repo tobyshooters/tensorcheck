@@ -2,13 +2,12 @@
 
 Run-time validation of tensors for machine-learning systems.
 
-```
-├── tensorcheck
-│   ├── __init__.py
-│   ├── tensorcheck.py
-│   └── test.py
-└── example.py
-```
+Supports:
+1. Tensor dtypes validation for `np.ndarray` and `torch.Tensor`
+2. Shape validation, including generic shape variables
+3. Range of input validation
+
+## Example Usage
 
 ```python
 import numpy as np
@@ -58,10 +57,5 @@ inference(x, y)
 # > Success
 ```
 
-Supports:
-1. `np.ndarray` and `torch.Tensor` dtypes
-2. Shape validation, including generic shape variables
-3. Range of input variables
-
-To do:
+## Future Work
 - [ ] Return value checking
