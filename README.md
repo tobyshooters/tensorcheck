@@ -2,6 +2,14 @@
 
 Run-time validation of tensors for machine-learning systems.
 
+```
+├── tensorcheck
+│   ├── __init__.py
+│   ├── tensorcheck.py
+│   └── test.py
+└── example.py
+```
+
 ```python
 import numpy as np
 import torch
