@@ -1,5 +1,7 @@
 # TensorCheck
 
+`pip install tensorcheck`
+
 Run-time validation of tensors for machine-learning systems.
 
 This is a naive way of validating tensor inputs to functions by using a
