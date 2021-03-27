@@ -74,3 +74,4 @@ apply_mask(x, y)
 - [x] Add support for return types
 - [ ] Validate all annotations (e.g. shape must be list of string/int/float)
 - [ ] Work on multiple return values
+- [ ] Guarantee whole range is used, e.g. [0, 1] should fail on [0, 255]
