@@ -11,15 +11,29 @@ class ShapeException(Exception):      pass
 class LowerBoundException(Exception): pass
 class UpperBoundException(Exception): pass
 
-def assert_types(types, named_args):
 
-    generic_shapes = {}
+class TypeAsserter:
 
-    for name, annotation in types.items():
-        if name not in named_args:
-            raise AnnotationException(f'{name} is not a parameter of the function')
-        arg = named_args[name]
+    def __init__(self, annotations):
+        self.argument_annotations = {k:v for k,v in annotations.items() if k != "return"}
+        self.return_annotation = annotations.get("return", None)
+        # Keeps map from generic shape variables to first seen sizes
+        self.generic_shapes = {}
 
+
+    def assert_arguments(self, named_args):
+        for name, annotation in self.argument_annotations.items():
+            if name not in named_args:
+                raise AnnotationException(f'{name} is not a parameter of the function')
+            self.assert_type(name, named_args[name], annotation)
+
+
+    def assert_return(self, output):
+        if self.return_annotation is not None:
+            self.assert_type("return", output, self.return_annotation)
+
+
+    def assert_type(self, name, arg, annotation):
         if type(arg) not in [np.ndarray, torch.Tensor]:
             raise TypeException(f'Annotation must be np.ndarray or torch.Tensor, not {type(arg)}')
 
@@ -34,12 +48,13 @@ def assert_types(types, named_args):
                     raise DataTypeException(f'/{name}/ dtype {arg.dtype} is not {wish}')
 
             elif check == "shape":
+                # Build up shape from cache, while updating unseen variables
                 concrete_wish = []
                 for wish_dim, wish_size in enumerate(wish):
                     if isinstance(wish_size, str):
-                        if not wish_size in generic_shapes:
-                            generic_shapes[wish_size] = arg.shape[wish_dim]
-                        concrete_wish.append(generic_shapes[wish_size])
+                        if not wish_size in self.generic_shapes:
+                            self.generic_shapes[wish_size] = arg.shape[wish_dim]
+                        concrete_wish.append(self.generic_shapes[wish_size])
                     else:
                         concrete_wish.append(wish_size)
 
@@ -60,7 +75,8 @@ def assert_types(types, named_args):
                     raise UpperBoundException(errs)
 
 
-def tensorcheck(types):
+
+def tensorcheck(annotations):
     """
     The type checking decorator for Numpy arrays.
     Reference: https://realpython.com/primer-on-python-decorators
@@ -68,8 +84,11 @@ def tensorcheck(types):
     def decorator(func):
         @wraps(func)
         def func_with_asserts(*args, **kwargs):
+            asserter = TypeAsserter(annotations)
             named_args = getcallargs(func, *args, **kwargs)
-            assert_types(types, named_args)
-            return func(**named_args)
+            asserter.assert_arguments(named_args)
+            output = func(**named_args)
+            asserter.assert_return(output)
+            return output
         return func_with_asserts
     return decorator
