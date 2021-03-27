@@ -248,5 +248,51 @@ class TestTensorChecker(unittest.TestCase):
             self.fail()
 
 
+    def test_return_with_outer_product_shape(self):
+        try:
+            @tensorcheck({
+                "a":      { "shape": [2]    },
+                "b":      { "shape": [3]    },
+                "return": { "shape": [2, 3] },
+            })
+            def inference(a, b):
+                return np.outer(a, b)
+
+            inference(np.array([-3, 2]), np.array([2, 5, -1]))
+
+        except:
+            self.fail()
+
+
+    def test_return_with_type_cast(self):
+        try:
+            @tensorcheck({
+                "a":      { "dtype": np.float },
+                "return": { "dtype": np.uint8 },
+            })
+            def cast_to_int(a):
+                return a.astype(np.uint8)
+
+            img = np.random.uniform(0, 255, size=[1, 3, 3])
+            cast_to_int(img)
+
+        except:
+            self.fail()
+
+
+    def test_return_fail_with_type(self):
+        with self.assertRaises(DataTypeException):
+            @tensorcheck({
+                "a":      { "dtype": np.float },
+                "return": { "dtype": np.uint8 },
+            })
+            def identity(a):
+                return a
+
+            img = np.random.uniform(0, 255, size=[1, 3, 3])
+            identity(img)
+
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -48,6 +48,9 @@ class TypeAsserter:
                     raise DataTypeException(f'/{name}/ dtype {arg.dtype} is not {wish}')
 
             elif check == "shape":
+                if not isinstance(wish, list):
+                    raise AnnotationException(f'{wish} is not a valid shape annotation.')
+
                 # Build up shape from cache, while updating unseen variables
                 concrete_wish = []
                 for wish_dim, wish_size in enumerate(wish):
@@ -55,8 +58,10 @@ class TypeAsserter:
                         if not wish_size in self.generic_shapes:
                             self.generic_shapes[wish_size] = arg.shape[wish_dim]
                         concrete_wish.append(self.generic_shapes[wish_size])
-                    else:
+                    elif isinstance(wish_size, (int, float)):
                         concrete_wish.append(wish_size)
+                    else:
+                        raise AnnotationException(f'{wish_size} in shape annotation is not an int, float, or string.')
 
                 for wish_dim, wish_size in enumerate(concrete_wish):
                     if arg.shape[wish_dim] != wish_size:
