@@ -63,6 +63,10 @@ class TypeAsserter:
                     else:
                         raise AnnotationException(f'{wish_size} in shape annotation is not an int, float, or string.')
 
+                if len(arg.shape) != len(concrete_wish):
+                    err = f'/{name}/ {arg.shape} is not of same length as desired shape {concrete_wish}'
+                    raise ShapeException(err)
+
                 for wish_dim, wish_size in enumerate(concrete_wish):
                     if arg.shape[wish_dim] != wish_size:
                         errs = f'/{name}/ dim {wish_dim} of {arg.shape} is not {wish[wish_dim]}={concrete_wish[wish_dim]}'

@@ -135,6 +135,18 @@ class TestTensorChecker(unittest.TestCase):
             self.fail()
 
 
+    def test_shape_length_not_equal_fails(self):
+        with self.assertRaises(ShapeException):
+            @tensorcheck({
+                "a": { "shape": [1, 1, 3] },
+            })
+            def inference(a):
+                return
+
+            x = np.random.randn(1, 1, 3, 1)
+            inference(x)
+
+
     def test_generic_shape_success_across_torch_and_numpy(self):
         try:
             @tensorcheck({
